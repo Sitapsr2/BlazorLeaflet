@@ -3,6 +3,7 @@ using BlazorLeaflet.Utils;
 using Microsoft.JSInterop;
 using System;
 using System.Drawing;
+using System.Threading.Tasks;
 
 namespace BlazorLeaflet.Models
 {
@@ -86,9 +87,28 @@ namespace BlazorLeaflet.Models
             Position = position;
         }
 
+        #region methods 
+
+        public ValueTask SetLatLng(LatLng latLng) 
+        {
+            Position = new PointF
+            {
+                X = (float)latLng.Lat,
+                Y = (float)latLng.Lng
+            };
+            return JSRuntime.InvokeVoidAsync($"{LeafletInterops.BaseObjectContainer}.{nameof(Marker)}.setLatLng", MapId, Id, latLng);
+        }
+            
+
+        #endregion
+
         #region events
 
         public delegate void DragEventHandler(Marker sender, DragEvent e);
+
+        public delegate void EventHandlerMarker(Marker sender, Event e);
+
+        public delegate void DragEndEventHandler(Marker sender, DragEndEvent e);
 
         public event DragEventHandler OnMove;
 
@@ -97,8 +117,6 @@ namespace BlazorLeaflet.Models
         {
             OnMove?.Invoke(this, eventArgs);
         }
-
-        public delegate void EventHandlerMarker(Marker sender, Event e);
 
         public event EventHandlerMarker OnDragStart;
 
@@ -123,8 +141,6 @@ namespace BlazorLeaflet.Models
         {
             OnDrag?.Invoke(this, eventArgs);
         }
-
-        public delegate void DragEndEventHandler(Marker sender, DragEndEvent e);
 
         public event DragEndEventHandler OnDragEnd;
 

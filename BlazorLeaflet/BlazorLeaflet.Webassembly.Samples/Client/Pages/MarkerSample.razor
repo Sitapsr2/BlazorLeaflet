@@ -1,0 +1,132 @@
+﻿@page "/marker"
+
+@using System.Drawing
+@using BlazorLeaflet.Models
+@using BlazorLeaflet.Models.Events
+@inject IJSRuntime jsRuntime
+
+<h1>Blazor Leaflet </h1>
+
+<h3>Drag &amp; drop the Marker!</h3>
+
+<div class="form-inline m-2">
+    <div class="form-group mb-2">
+        <label>Lat </label>
+        <input class="form-control ml-2 mr-2" placeholder="city name" @bind="Lat" />
+    </div>
+
+    <div class="form-group mb-2">
+        <label>Lng </label>
+        <input class="form-control ml-2 mr-2" placeholder="city name" @bind="Lng" />
+    </div>
+</div>
+
+<div class="content-row">
+    <div style="height: 500px; width: 500px;">
+        <LeafletMap Map="_map" InitialPosition="_startAt" InitialZoom="4.8f" />
+    </div>
+
+    <DemoLogger @ref="Logger" />
+</div>
+
+@code
+{
+    private DemoLogger Logger;
+
+    private Map _map;
+
+    protected override void OnInitialized()
+    {
+        _startAt = new PointF(Lat, Lng);
+
+        _map = new Map(jsRuntime);
+
+        _map.Layers.Add(new TileLayer
+        {
+            UrlTemplate = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            Attribution = "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+        });
+
+        Marker = new Marker(_startAt)
+        {
+            Draggable = true,
+            Title = "Marker 1"
+        };
+
+        Action<string> log = (string message) => Logger.Log($"{nameof(MarkerSample.Marker)}.{message}");
+
+        Marker.OnAdd += (s, e) => log(nameof(Marker.OnAdd));
+        Marker.OnClick += (s, e) => log(nameof(Marker.OnClick));
+        Marker.OnContextMenu += (s, e) => log(nameof(Marker.OnContextMenu));
+        Marker.OnDblClick += (s, e) => log(nameof(Marker.OnDblClick));
+        Marker.OnDrag += (s, e) => log(nameof(Marker.OnDrag));
+        Marker.OnDragEnd += (s, e) => log(nameof(Marker.OnDragEnd));
+        Marker.OnDragStart += (s, e) => log(nameof(Marker.OnDragStart));
+        Marker.OnMouseDown += (s, e) => log(nameof(Marker.OnMouseDown));
+        Marker.OnMouseOut += (s, e) => log(nameof(Marker.OnMouseOut));
+        Marker.OnMouseOver += (s, e) => log(nameof(Marker.OnMouseOver));
+        Marker.OnMouseUp += (s, e) => log(nameof(Marker.OnMouseUp));
+        Marker.OnMove += (s, e) => log(nameof(Marker.OnMove));
+        Marker.OnMoveEnd += (s, e) => log(nameof(Marker.OnMoveEnd));
+        Marker.OnMoveStart += (s, e) => log(nameof(Marker.OnMoveStart));
+        Marker.OnRemove += (s, e) => log(nameof(Marker.OnRemove));
+        Marker.OnPopupClose += (s, e) => log(nameof(Marker.OnPopupClose));
+        Marker.OnPopupOpen += (s, e) => log(nameof(Marker.OnPopupOpen));
+        Marker.OnTooltipClose += (s, e) => log(nameof(Marker.OnTooltipClose));
+        Marker.OnTooltipOpen += (s, e) => log(nameof(Marker.OnTooltipOpen));
+
+        Marker.OnMove += OnDrag;
+
+        _map.Layers.Add(Marker);
+    }
+
+    private void OnDrag(Marker marker, DragEvent evt)
+    {
+        _lat = (float)evt.LatLng.Lat;
+        _lng = (float)evt.LatLng.Lng;
+        StateHasChanged();
+    }
+
+    private Marker Marker { get; set; }
+
+    private float _lat = 47.5574007f;
+
+    private float Lat
+    {
+        get
+        {
+            return _lat;
+        }
+        set
+        {
+            if (_lat != value)
+            {
+                _lat = value;
+                Marker.SetLatLng(new LatLng { Lat = (decimal)Lat, Lng = (decimal)Lng });
+                StateHasChanged();
+            }
+        }
+    }
+
+    private float _lng = 16.3918687f;
+
+    private float Lng
+    {
+        get
+        {
+            return _lng;
+        }
+        set
+        {
+            if(_lng != value)
+            {
+                _lng = value;
+                Marker.SetLatLng(new LatLng { Lat = (decimal)Lat, Lng = (decimal)Lng });
+                StateHasChanged();
+            }
+        }
+    }
+
+    private PointF _startAt;
+
+}

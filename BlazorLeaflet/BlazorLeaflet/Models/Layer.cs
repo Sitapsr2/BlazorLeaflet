@@ -12,6 +12,18 @@ namespace BlazorLeaflet.Models
         public string Id { get; }
 
         /// <summary>
+        /// We need JSRuntime to call methods on the corresponding javascript object
+        /// It will be set my LeafletMap when the layer is added to the actual map.
+        /// </summary>
+        public IJSRuntime JSRuntime { get; internal set; }
+
+        /// <summary>
+        /// We need MapId to call methods on the corresponding javascript object.
+        /// It will be set my LeafletMap when the layer is added to the actual map.
+        /// </summary>
+        public string MapId { get; internal set; }
+
+        /// <summary>
         /// By default the layer will be added to the map's overlay pane. Overriding this option will cause the layer to be placed on another pane by default.
         /// </summary>
         public virtual string Pane { get; set; } = "overlayPane";
@@ -40,6 +52,14 @@ namespace BlazorLeaflet.Models
 
         public delegate void EventHandler(Layer sender, Event e);
 
+        public delegate void TileEventHandler(Layer sender, TileEvent e);
+
+        public delegate void TileErrorEventHandler(Layer sender, TileErrorEvent e);
+
+        public delegate void PopupEventHandler(Layer sender, PopupEvent e);
+
+        public delegate void TooltipEventHandler(Layer sender, TooltipEvent e); 
+
         public event EventHandler OnAdd;
 
         [JSInvokable]
@@ -56,8 +76,6 @@ namespace BlazorLeaflet.Models
             OnRemove?.Invoke(this, eventArgs);
         }
 
-        public delegate void PopupEventHandler(Layer sender, PopupEvent e);
-
         public event PopupEventHandler OnPopupOpen;
 
         [JSInvokable]
@@ -73,8 +91,6 @@ namespace BlazorLeaflet.Models
         {
             OnPopupClose?.Invoke(this, eventArgs);
         }
-
-        public delegate void TooltipEventHandler(Layer sender, TooltipEvent e);
 
         public event TooltipEventHandler OnTooltipOpen;
 

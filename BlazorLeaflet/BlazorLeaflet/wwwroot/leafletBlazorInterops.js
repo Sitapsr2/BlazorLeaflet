@@ -34,6 +34,8 @@ window.leafletBlazor = {
             // crossOrigin
         });
         layer.addTo(maps[mapId]);
+
+        connectGridLayerEvents(layer, objectReference);
     },
     addMarker: function (mapId, marker, objectReference) {
         var options = {
@@ -85,6 +87,8 @@ window.leafletBlazor = {
         if (polyline.popup) {
             addPopup(layer, polyline.popup);
         }
+
+        connectPolylineEvents(layer, objectReference);
     },
     addPolygon: function (mapId, polygon, objectReference) {
         const layer = L.polygon(shapeToLatLngArray(polygon.shape), createPolyline(polygon));
@@ -99,6 +103,8 @@ window.leafletBlazor = {
         if (polygon.popup) {
             addPopup(layer, polygon.popup);
         }
+
+        connectPolygonEvents(layer, objectReference);
     },
     addRectangle: function (mapId, rectangle, objectReference) {
         const layer = L.rectangle([[rectangle.shape.bottom, rectangle.shape.left], [rectangle.shape.top, rectangle.shape.right]], createPolyline(rectangle));
@@ -113,6 +119,7 @@ window.leafletBlazor = {
         if (rectangle.popup) {
             addPopup(layer, rectangle.popup);
         }
+        connectRectangleEvents(layer, objectReference);
     },
     addCircle: function (mapId, circle, objectReference) {
         const layer = L.circle([circle.position.x, circle.position.y],
@@ -131,6 +138,7 @@ window.leafletBlazor = {
         if (circle.popup) {
             addPopup(layer, circle.popup);
         }
+        connectCircleEvents(layer, objectReference);
     },
     addImageLayer: function (mapId, image, objectReference) {
         const layerOptions = {
@@ -150,6 +158,8 @@ window.leafletBlazor = {
         const imgLayer = L.imageOverlay(image.url, bounds, layerOptions);
         layers[mapId].push(imgLayer);
         imgLayer.addTo(maps[mapId]);
+
+        connectImageLayerEvents(imgLayer, objectReference);
     },
     removeLayer: function (mapId, layerId) {
         const remainingLayers = layers[mapId].filter((layer) => layer.id !== layerId);
@@ -175,6 +185,13 @@ window.leafletBlazor = {
             easeLinearity: easeLinearity,
             noMoveStart: noMoveStart
         });
+    },
+
+    Marker: {
+        setLatLng: function (mapId, markerId, latLng) {
+            const marker = layers[mapId].find((layer) => layer.id === markerId);
+            marker.setLatLng(latLng);
+        }
     }
 };
 
@@ -289,14 +306,24 @@ function cleanupEventArgsForSerialization(eventArgs) {
         "target",
         "sourceTarget",
         "propagatedFrom",
-        "originalEvent"
+        "originalEvent",
+    ];
+
+    const propertiesToCleanup = [
+        "popup"
     ];
 
     const copy = {};
 
     for (let key in eventArgs) {
-        if (!propertiesToRemove.includes(key) && eventArgs.hasOwnProperty(key)) {
-            copy[key] = eventArgs[key];
+
+        if (!key.startsWith("_") /* do not copy private properties */
+            && !propertiesToRemove.includes(key)
+            && eventArgs.hasOwnProperty(key)) {
+
+            copy[key] = propertiesToCleanup.includes(key)
+                ? cleanupEventArgsForSerialization(eventArgs[key])
+                : eventArgs[key];
         }
     }
 
@@ -355,4 +382,53 @@ function connectMarkerEvents(marker, objectReference) {
     });
 }
 
+function connectCircleEvents(circle, objectReference) {
+
+    connectInteractiveLayerEvents(circle, objectReference);
+
+    mapEvents(circle, objectReference, {
+        "move": "NotifyMove"
+    });
+}
+
+function connectGridLayerEvents(gridLayer, objectReference) {
+    mapEvents(gridLayer, objectReference, {
+        "loading": "NotifyLoading",
+        "tileunload": "NotifyTileUnload",
+        "tileloadstart": "NotifyileLoadStart",
+        "tileerror": "NotifyTileError",
+        "tileload": "NotifyTileLoad",
+        "load": "NotifyLoad",
+    });
+}
+
+function connectTileLayerEvents(tileLayer, objectReference) {
+    connectGridLayerEvents(tileLayer, objectReference);
+}
+
+function connectPathEvents(path, objectReference) {
+    connectInteractiveLayerEvents(path, objectReference);
+}
+
+function connectPolylineEvents(polyLine, objectReference) {
+    connectPathEvents(polyLine, objectReference);
+}
+
+function connectRectangleEvents(rectangle, objectReference) {
+    connectPolylineEvents(rectangle, objectReference);
+}
+
+function connectPolygonEvents(polygon, objectReference) {
+    connectPolylineEvents(polygon, objectReference);
+}
+
+function connectImageLayerEvents(imageLayer, objectReference) {
+
+    connectInteractiveLayerEvents(imageLayer, objectReference);
+
+    mapEvents(imageLayer, objectReference, {
+        "load": "NotifyLoad",
+        "error": "NotifyError",
+    });
+}
 // #endregion
